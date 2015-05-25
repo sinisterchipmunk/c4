@@ -7,7 +7,8 @@ c4.view 'autos-show',
       selection = data.auto
       bus.channel('autos-show').publish 'stale'
 
-    bus.channel('autos-show').subscribe 'compile', (compile) ->
-      key = compile.view.attr 'data-source'
-      compile.view.brokers [key], (data) ->
-        compile.link auto: data[key]?[selection]
+    bus.channel('autos-show').subscribe 'compile', (compiler) ->
+      {view, link} = compiler
+      key = view.attr 'data-source'
+      view.broker [key], (data) ->
+        link auto: data[key]?[selection]

@@ -96,7 +96,7 @@ bus.channel('view').subscribe 'template-ready', (metaview) ->
     continue unless current_route.has view
     do (view) ->
       $view = $ view
-      $view.brokers = (keys, fn) ->
+      $view.broker = (keys, fn) ->
         subs = $view.data('c4.broker.subscriptions') || []
         timeout = null
         props = {}
