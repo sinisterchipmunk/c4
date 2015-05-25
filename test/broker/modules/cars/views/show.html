@@ -1,0 +1,13 @@
+{#
+  if auto {:
+      <div>Year:  <strong>#{ auto.year  }</strong></div>
+      <div>Make:  <strong>#{ auto.make  }</strong></div>
+      <div>Model: <strong>#{ auto.model }</strong></div>
+      <div>
+        <img src="#{ auto.image }" width='800' />
+      </div>
+    :}
+  else {:
+      Loading...
+    :}
+#}
