@@ -1,13 +1,13 @@
 <table>
   {#
-    if autos
-      for auto, index in autos {:
+    if cars
+      for car, index in cars {:
         <tr>
           <td>
-            <a href="##{source}/show?auto=#{index}">
-              #{ auto.year  }
-              #{ auto.make  }
-              #{ auto.model }
+            <a href="#cars/show?car=#{index}">
+              #{ car.year  }
+              #{ car.make  }
+              #{ car.model }
             </a>
           </td>
         </tr>

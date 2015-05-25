@@ -1,10 +1,10 @@
 {#
-  if auto {:
-      <div>Year:  <strong>#{ auto.year  }</strong></div>
-      <div>Make:  <strong>#{ auto.make  }</strong></div>
-      <div>Model: <strong>#{ auto.model }</strong></div>
+  if car {:
+      <div>Year:  <strong>#{ car.year  }</strong></div>
+      <div>Make:  <strong>#{ car.make  }</strong></div>
+      <div>Model: <strong>#{ car.model }</strong></div>
       <div>
-        <img src="#{ auto.image }" width='800' />
+        <img src="#{ car.image }" width='800' />
       </div>
     :}
   else {:
