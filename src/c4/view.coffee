@@ -71,17 +71,60 @@ bus.channel('routes').subscribe 'show', (info) ->
             `this` is undefined. Views should subscribe to channels within
             this function. It is guaranteed to be invoked before the
             application at large is started.
-
+  * `compile`: a callback function which will be invoked whenever the view
+               is compiled. This is shorthand for hooking up a `compile`
+               subscriber to a channel with the same name as the view during
+               `init`, but this approach is preferred where possible.
 ###
 module.exports = (view_name, metaview) ->
   metaview.name = view_name
   VIEWS[view_name] = metaview
+  if metaview.compile
+    bus.channel(view_name).subscribe 'compile', metaview.compile
   bus.channel(view_name).subscribe 'stale', ->
     if metaview.template
       bus.channel('view').publish 'template-ready', metaview
     # else, it's still loading
 
 partial_fn = (filename, context) -> "PARTIALS NOT IMPLEMENTED"
+
+exports.prepare_view = (view) ->
+  # perf: don't compile a template if it isn't part of the current route
+  # console.log current_route, view, current_route.has(view)
+  $view = $ view
+  metaview = VIEWS[$view.attr 'data-view']
+  throw new Error 'metaview not found for view', view unless metaview
+  $view.broker = (keys, fn) ->
+    subs = $view.data('c4.broker.subscriptions') || []
+    timeout = null
+    props = {}
+    callback = -> fn props
+    for key in keys
+      props[key] = undefined
+      do (key) ->
+        subs.push bus.channel('c4.broker').subscribe key, (data) ->
+          props[key] = data
+          clearTimeout timeout
+          # ensures fn only gets called once for a set of rapidly changing
+          # keys
+          timeout = setTimeout callback, 20
+    $view.data 'c4.broker.subscriptions', subs
+    true
+  bus.channel(metaview.name).publish 'compile',
+    view: $view,
+    link: (context = {}) ->
+      unless typeof context is 'object'
+        throw new Error 'context must be an object'
+      context_copy = Object.create context
+      context_copy.partial or= partial_fn
+      [err, res] = new toffee.view(metaview.template).run context_copy
+      throw err if err
+      bus.channel(metaview.name).publish 'compiled', context
+      $res = $ "<span>#{res}</span>"
+      for new_view in $res.find("*[data-view]").addBack("*[data-view]")
+        exports.prepare_view new_view
+      $(view).html $res.children()
+
 
 bus.channel('view').subscribe 'template-ready', (metaview) ->
   # at this stage, a view is ready to be instantiated. Search the dom for
@@ -91,40 +134,8 @@ bus.channel('view').subscribe 'template-ready', (metaview) ->
   relevant_views = current_route.find("*[data-view=#{metaview.name}]")
                                 .addBack("*[data-view=#{metaview.name}]")
   for view in relevant_views
-    # perf: don't compile a template if it isn't part of the current route
-    # console.log current_route, view, current_route.has(view)
     continue unless current_route.has view
-    do (view) ->
-      $view = $ view
-      $view.broker = (keys, fn) ->
-        subs = $view.data('c4.broker.subscriptions') || []
-        timeout = null
-        props = {}
-        callback = -> fn props
-        for key in keys
-          props[key] = undefined
-          do (key) ->
-            subs.push bus.channel('c4.broker').subscribe key, (data) ->
-              props[key] = data
-              clearTimeout timeout
-              # ensures fn only gets called once for a set of rapidly changing
-              # keys
-              timeout = setTimeout callback, 20
-        $view.data 'c4.broker.subscriptions', subs
-        true
-        # subs = $view.data('c4.broker.subscriptions') || []
-        # subs.push bus.channel('c4.broker')
-      bus.channel(metaview.name).publish 'compile',
-        view: $view,
-        link: (context) ->
-          unless typeof context is 'object'
-            throw new Error 'context must be an object'
-          context_copy = Object.create context
-          context_copy.partial or= partial_fn
-          [err, res] = new toffee.view(metaview.template).run context_copy
-          throw err if err
-          bus.channel(metaview.name).publish 'compiled', context
-          $(view).html res
+    exports.prepare_view view
   true
 
 window.addEventListener 'load', ->

@@ -11,21 +11,11 @@
     <h1>The Web App</h1>
 
     <div class="nav">
-      <a href='#cars'>Cars</a> |
-      <a href='#bikes'>Bikes</a>
+      <a href='#autos/cars'>Cars</a> |
+      <a href='#autos/bikes'>Bikes</a>
     </div>
 
-    <div data-route='/cars'>
-      <h2>Cars</h2>
-      <div data-route='/'     data-view='autos-list' data-source='cars'></div>
-      <div data-route='/show' data-view='autos-show' data-source='cars'></div>
-    </div>
-
-    <div data-route='/bikes'>
-      <h2>Bikes</h2>
-      <div data-route='/'     data-view='autos-list' data-source='bikes'></div>
-      <div data-route='/show' data-view='autos-show' data-source='bikes'></div>
-    </div>
+    <div data-route='/autos' data-module='autos'></div>
 
   </body>
 </html>

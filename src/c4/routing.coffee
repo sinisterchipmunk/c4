@@ -38,14 +38,21 @@ onchange = ->
   # wins.
   for ele in $('*[data-route]:not(:has(*[data-route]))')
     $ele = $ ele
-    nodes = ($ parent for parent in $ele.parents("*[data-route]"))
+    nodes = ($ parent for parent in $ele.parents("*[data-route]")).reverse()
     nodes.push $ele
     current_path = full_path nodes
+    console.log current_path, path
     if current_path is path
       bus.channel('routes').publish 'show',
         route:  $ele
         params: params
       return true
+
+  # if the path is blank (root route), then match the document body.
+  if path is ''
+    bus.channel('routes').publish 'show',
+      route: $ document.body
+      params: params
 
   console.warn 'no route found for hash path', path, params
   false
@@ -53,7 +60,5 @@ onchange = ->
 window.addEventListener 'hashchange', (evt) ->
   onchange()
 
-bus.channel('c4').subscribe 'ready', ->
+bus.channel('c4').subscribe 'routing', ->
   onchange()
-
-  # bus.channel('routing').publish '/', {}

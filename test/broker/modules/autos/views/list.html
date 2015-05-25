@@ -1,0 +1,21 @@
+<table>
+  {#
+    if autos
+      for auto, index in autos {:
+        <tr>
+          <td>
+            <a href="##{source}/show?auto=#{index}">
+              #{ auto.year  }
+              #{ auto.make  }
+              #{ auto.model }
+            </a>
+          </td>
+        </tr>
+      :}
+    else {:
+      <tr><th>
+        <h3>Loading...</h3>
+      </th></tr>
+    :}
+  #}
+</table>

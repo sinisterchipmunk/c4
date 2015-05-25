@@ -1,5 +1,6 @@
 require 'c4/routing'
 require 'c4/broker'
+require 'c4/module'
 
 bus = require 'postal'
 bus.addWireTap (o, env) ->
