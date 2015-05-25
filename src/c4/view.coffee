@@ -6,7 +6,7 @@ bus.channel('view').subscribe 'file', (path) ->
   $.get path, (body) ->
     $(document.body).html body
 
-views = {}
+VIEWS = {}
 
 uniq = (ary) ->
   result = []
@@ -18,7 +18,24 @@ uniq = (ary) ->
 # the current route
 current_route = null
 
+cleanup = (route) ->
+  return unless route
+  # TODO if we provide an interface into bus instead of bus itself, we can
+  # consume subscriptions automagically here instead of forcing manual cleanup
+  views = route.find("*[data-view]").addBack("*[data-view]")
+  for view in views
+    $view = $ view
+    subs = $view.data 'c4.broker.subscriptions'
+    if subs
+      for sub in subs
+        sub.unsubscribe()
+    $view.data 'c4.broker.subscriptions', []
+    bus.channel($view.attr 'data-view').publish 'release', $view
+  true
+
 bus.channel('routes').subscribe 'show', (info) ->
+  # when route changes, all existing views should have a chance to unsubscribe
+  cleanup current_route
   # when route changes, delegate params into views attached to the new route
   {route, params} = info
   $affected_views = route.find("*[data-view]").addBack("*[data-view]")
@@ -29,9 +46,9 @@ bus.channel('routes').subscribe 'show', (info) ->
   current_route = route
   for view in $affected_views
     $view = $ view
-    metaview = views[$view.attr 'data-view']
+    metaview = VIEWS[$view.attr 'data-view']
     unless metaview
-      console.warn "missing view data for view instance", view
+      console.warn "missing metaview for view", view
       continue
     if metaview.template
       bus.channel('view').publish 'template-ready', metaview
@@ -58,7 +75,7 @@ bus.channel('routes').subscribe 'show', (info) ->
 ###
 module.exports = (view_name, metaview) ->
   metaview.name = view_name
-  views[view_name] = metaview
+  VIEWS[view_name] = metaview
   bus.channel(view_name).subscribe 'stale', ->
     if metaview.template
       bus.channel('view').publish 'template-ready', metaview
@@ -78,8 +95,27 @@ bus.channel('view').subscribe 'template-ready', (metaview) ->
     # console.log current_route, view, current_route.has(view)
     continue unless current_route.has view
     do (view) ->
+      $view = $ view
+      $view.brokers = (keys, fn) ->
+        subs = $view.data('c4.broker.subscriptions') || []
+        timeout = null
+        props = {}
+        callback = -> fn props
+        for key in keys
+          props[key] = undefined
+          do (key) ->
+            subs.push bus.channel('c4.broker').subscribe key, (data) ->
+              props[key] = data
+              clearTimeout timeout
+              # ensures fn only gets called once for a set of rapidly changing
+              # keys
+              timeout = setTimeout callback, 20
+        $view.data 'c4.broker.subscriptions', subs
+        true
+        # subs = $view.data('c4.broker.subscriptions') || []
+        # subs.push bus.channel('c4.broker')
       bus.channel(metaview.name).publish 'compile',
-        view: $(view),
+        view: $view,
         link: (context) ->
           unless typeof context is 'object'
             throw new Error 'context must be an object'
@@ -95,7 +131,7 @@ window.addEventListener 'load', ->
   # warn if any view elements are referencing missing views
   for view in $('*[data-view]')
     view_name = $(view).attr 'data-view'
-    unless views[view_name]
+    unless VIEWS[view_name]
       console.warn 'no matching view was found', view
 
   # load template for each view if necessary, then call its init function.
@@ -103,7 +139,7 @@ window.addEventListener 'load', ->
   # the template, which may happen at boot or may happen dynamically. But
   # the ready function is guaranteed to be called only after all other
   # init functions have been called.
-  for name, metaview of views
+  for name, metaview of VIEWS
     do (name, metaview) ->
       metaview.init? bus  # does it have a template? if not, try to load it
       if metaview.template
