@@ -12,8 +12,6 @@ strip_path = (a) ->
   a = a[1..-1]  if /^\//.test a
   a
 
-append_path = (a, b) -> strip_path "#{strip_path a}/#{strip_path b}"
-
 parse_hash = (hash) ->
   params = {}
   index = hash.indexOf '?'
@@ -24,24 +22,40 @@ parse_hash = (hash) ->
   path: strip_path hash[1..-1]
   params: params
 
+exports.join_route = (a, b) -> strip_path "#{strip_path a}/#{strip_path b}"
+
+full_path = (stack) ->
+  stack.reduce ((a, b) -> exports.join_route a, b.attr 'data-route'), ''
+
+exports.route_for = ($el) ->
+  nodes = ($ parent for parent in $el.parents("*[data-route]")).reverse()
+  nodes.push $el if $el.attr('data-route') isnt undefined
+  full_path nodes
+
+exports.prefix = (route_prefix, $view_root) ->
+  # prefix module links to be internal to module
+  for a in $view_root.find("a")
+    $a = $ a
+    href = $a.attr 'href'
+    if href?[0] is '#'
+      if href.indexOf route_prefix isnt 1
+        corrected_route = exports.join_route route_prefix, href[1..-1]
+        $a.attr 'href', "##{corrected_route}"
+  true
+
 onchange = ->
   # hide any data-route elements; later we'll show the one we've routed to
   $('*[data-route]').hide()
 
   {path, params} = parse_hash document.location.hash
-
-  full_path = (stack) ->
-    stack.reduce ((a, b) -> append_path a, b.attr 'data-route'), ''
+  bus.channel('c4.broker').publish 'put', params: params
 
   # get all leaf routes, that is, routes that do not contain nested routes;
   # and then construct route paths from them and their parents. First match
   # wins.
   for ele in $('*[data-route]:not(:has(*[data-route]))')
     $ele = $ ele
-    nodes = ($ parent for parent in $ele.parents("*[data-route]")).reverse()
-    nodes.push $ele
-    current_path = full_path nodes
-    console.log current_path, path
+    current_path = exports.route_for $ele
     if current_path is path
       bus.channel('routes').publish 'show',
         route:  $ele

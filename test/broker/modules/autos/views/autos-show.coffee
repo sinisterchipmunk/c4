@@ -4,5 +4,5 @@ c4.view 'autos-show',
     {view, link} = compiler
     key = view.attr 'data-source'
     view.broker [key, 'params'], (data) ->
-      selection = data.params
+      selection = data.params?.auto
       link auto: data[key]?[selection]

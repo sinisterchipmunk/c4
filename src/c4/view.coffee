@@ -1,6 +1,7 @@
 $ = require 'jquery'
 bus = require 'postal'
 toffee = require 'toffee'
+routing = require './routing'
 
 bus.channel('view').subscribe 'file', (path) ->
   $.get path, (body) ->
@@ -121,9 +122,15 @@ exports.prepare_view = (view) ->
       throw err if err
       bus.channel(metaview.name).publish 'compiled', context
       $res = $ "<span>#{res}</span>"
-      for new_view in $res.find("*[data-view]").addBack("*[data-view]")
-        exports.prepare_view new_view
-      $(view).html $res.children()
+      # for new_view in $res.find("*[data-view]").addBack("*[data-view]")
+      #   exports.prepare_view new_view
+      $view.html $res
+
+      # If we have a parent data-module, we need to prefix any href's with the
+      # route prefix of the data-module.
+      $module = current_route.closest "*[data-module]"
+      if $module.length
+        routing.prefix routing.route_for($module), $view
 
 
 bus.channel('view').subscribe 'template-ready', (metaview) ->
