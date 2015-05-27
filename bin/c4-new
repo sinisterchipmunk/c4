@@ -1,0 +1,6 @@
+#!/usr/bin/env coffee
+
+require 'commander'
+  .command 'app <app-name>',       'generate a new c4 app'
+  .command 'module <module-name>', 'generate a new c4 module'
+  .parse process.argv

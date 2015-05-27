@@ -89,6 +89,12 @@ module.exports = (view_name, metaview) ->
 
 partial_fn = (filename, context) -> "PARTIALS NOT IMPLEMENTED"
 
+exports.template = (view_name, content) ->
+  unless metaview = VIEWS[view_name]
+    throw new Error "Template ready but view not found: #{view_name}"
+  metaview.template = content
+  bus.channel('view').publish 'template-ready', metaview
+
 exports.prepare_view = (view) ->
   # perf: don't compile a template if it isn't part of the current route
   # console.log current_route, view, current_route.has(view)
@@ -166,9 +172,7 @@ window.addEventListener 'load', ->
         unless metaview.path
           console.warn 'view has no template and no path', view
           return
-        $.get metaview.path, (template) ->
-          metaview.template = template
-          bus.channel('view').publish 'template-ready', metaview
+        $.get metaview.path, (template) -> exports.template name, template
 
   bus.channel('c4').publish 'ready'
   true

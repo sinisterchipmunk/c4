@@ -1,0 +1,8 @@
+#!/usr/bin/env coffee
+
+require 'commander'
+  .version '0.0.1'
+  .command 'build',                'build this c4 app'
+  .command 'new <generator-name>', 'run a c4 generator'
+  .command 'server [port]',        'run the c4 dev server'
+  .parse process.argv

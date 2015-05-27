@@ -1,0 +1,56 @@
+#!/usr/bin/env coffee
+
+port = 8192
+path = require 'path'
+proxies = []
+
+proxyCollect = (val, arr) ->
+  comma = val.indexOf ','
+  throw new Error 'proxy must take the form "<path>,<backend>"' if comma is -1
+  arr.push
+    url: val[0...comma]
+    backend: val[(comma+1)..-1]
+  arr
+
+program = require 'commander'
+  .arguments '[port]'
+  .option '-x, --proxy <path>,<backend>',
+          'proxies, can have more than 1, ex: -x /api,http://localhost:3000/api',
+          proxyCollect, proxies
+  .action (custom_port) ->
+    port = custom_port
+  .parse process.argv
+
+connect = require 'connect'
+serveStatic = require 'serve-static'
+Proxy = require 'proxy-middleware'
+URL = require 'url'
+
+serve_paths = []
+serve_paths.push path.join process.cwd(), 'app'
+serve_paths.push path.join __dirname, '../dist'
+
+console.log 'C4 serving files from:'
+console.log ''
+for serve_path in serve_paths
+  console.log "  #{serve_path}"
+console.log ''
+console.log '... to:'
+console.log ''
+console.log "  => http://localhost:#{port}"
+console.log ''
+if proxies.length
+  console.log "... proxying:"
+for proxy in proxies
+  full_url = path.join "localhost:#{port}", proxy.url
+  console.log "     http://#{full_url} => #{proxy.backend}"
+console.log ''
+
+server = connect()
+for serve_path in serve_paths
+  server.use serveStatic serve_path
+for proxy in proxies
+  url = proxy.url
+  url = "/#{url}" unless url.charAt(0) is '/'
+  server.use proxy.url, Proxy URL.parse proxy.backend
+server.listen port

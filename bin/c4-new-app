@@ -1,0 +1,15 @@
+#!/usr/bin/env coffee
+
+{directory, template} = require 'c4/generator'
+
+require 'commander'
+  .arguments '<app-name>', 'name of application to generate'
+  .action (a) ->
+    directory a, ->
+      directory [a, 'tmp', 'build']
+      directory [a, 'app'], ->
+        directory [a, 'app', 'modules']
+        template 'app.html', "#{a}/app/index.html",
+          appName: a
+          done: -> console.log 'done'
+  .parse process.argv

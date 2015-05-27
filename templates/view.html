@@ -1,0 +1,25 @@
+<h2>Hello from #{ '#{view_name}' }!</h2>
+
+<p>
+  You can find me at app/modules/#{ '#{module_name}' }/views/#{ '#{view_name}' }.html
+</p>
+
+<p>
+  Query params:
+  <strong>
+    #{ '#{JSON.stringify params}' }
+  </strong>
+</p>
+
+{# if services.length {:
+<p>
+  Service data:
+  <ul>
+    {#
+      for service in services {:<li>
+      #{ '#{JSON.stringify ' + service + '}' }
+    </li>
+    :} #}
+  </ul>
+</p>
+:} #}

@@ -1,0 +1,47 @@
+#!/usr/bin/env coffee
+
+path = require 'path'
+fs = require 'fs'
+{env} = require 'jsdom'
+jquery = require 'jquery'
+
+check = (err) -> throw new Error err.toString() if err
+
+embed_modules = (app_dir, _done) ->
+  fs.readdir app_dir, (err, files) ->
+    check err
+    for root_file_name in files
+      continue unless /\.html$/.test root_file_name
+      do (root_file_name) ->
+        console.log "Embedding modules into #{root_file_name}"
+        fs.readFile path.join(app_dir, root_file_name), 'utf8', (err, html) ->
+          check err
+          env html, (errors, window) ->
+            check errors
+            $ = jquery window
+            process_modules = (parent, prefix, done) ->
+              $modules = $(parent).find '*[data-module]'
+              return done() unless $modules.length
+              pending = $modules.length
+              for module in $modules
+                $module = $ module
+                do ($module) ->
+                  module_name = $module.attr 'data-module'
+                  console.log "  => embedding DOM for module '#{module_name}'"
+                  module_prefix = path.join prefix, 'modules', module_name
+                  module_path = path.join module_prefix, 'views', 'index.html'
+                  $module.attr 'data-module', null
+                  # for each module, insert its index.html into the container.
+                  # Then we have to erase the data-module attribute to keep c4
+                  # from trying to load the module in production.
+                  fs.readFile module_path, 'utf8', (err, fragment) ->
+                    check err
+                    $module.html fragment
+                    process_modules $module, module_prefix, done
+            process_modules $('body'), app_dir, ->
+              outfile = path.join 'tmp/build', root_file_name
+              fs.writeFile outfile, $('html')[0].outerHTML, 'utf8', (err) ->
+                check err
+                _done()
+
+embed_modules './app', -> console.log 'Embed modules: done'
