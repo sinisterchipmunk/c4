@@ -1,13 +1,13 @@
 #!/usr/bin/env coffee
 
-{directory, template} = require 'c4/generator'
+{directory, template} = require 'c4/cli/generator'
 
 services = []
 views    = []
 
 collect = (name, dest) -> dest.push name; dest
 
-require 'commander'
+program = require 'commander'
   .arguments '<module-name>',     'name of module to generate'
   .option '-s, --service [name]',
           'name of a service, can specify multiple times',
@@ -17,18 +17,19 @@ require 'commander'
           collect, views
   .action (module_name) ->
     path = require 'path'
-    directory ['app', 'modules', module_name], ->
-      directory ['app', 'modules', module_name, 'services'], ->
-        prefix = "app/modules/#{module_name}/services"
+    directory ['src', 'modules', module_name], ->
+      directory ['src', 'modules', module_name, 'services'], ->
+        prefix = "src/modules/#{module_name}/services"
         for service in services
           template 'service.coffee', path.join(prefix, "#{service}.coffee"),
             service_name: service
             module_name: module_name
-      directory ['app', 'modules', module_name, 'views'], ->
-        prefix = "app/modules/#{module_name}/views"
+      directory ['src', 'modules', module_name, 'views'], ->
+        prefix = "src/modules/#{module_name}/views"
         template 'module.html', path.join(prefix, 'index.html'),
           services: services
           views: views
+          module_name: module_name
         for view in views
           template 'view.html', path.join(prefix, "#{view}.html"),
             view_name: view
@@ -39,16 +40,19 @@ require 'commander'
             services: services
             module_name: module_name
         true
-      directory ['app', 'modules', module_name, 'tests', 'views'], ->
-        prefix = "app/modules/#{module_name}/tests/views"
+      directory ['src', 'modules', module_name, 'specs', 'views'], ->
+        prefix = "src/modules/#{module_name}/specs/views"
         for view in views
-          template 'view-test.coffee', path.join(prefix, "#{view}.coffee"),
+          template 'view-test.coffee', path.join(prefix, "#{view}.spec.coffee"),
             view_name: view
             module_name: module_name
-      directory ['app', 'modules', module_name, 'tests', 'services'], ->
-        prefix = "app/modules/#{module_name}/tests/services"
+            services: services
+      directory ['src', 'modules', module_name, 'specs', 'services'], ->
+        prefix = "src/modules/#{module_name}/specs/services"
         for service in services
-          template 'service-test.coffee', path.join(prefix, "#{service}.coffee"),
+          template 'service-test.coffee', path.join(prefix, "#{service}.spec.coffee"),
             service_name: service
             module_name: module_name
   .parse process.argv
+
+program.help() unless process.argv.slice(2).length

@@ -6,7 +6,8 @@
     <script src='c4.js'></script>
     <script src='app.js'></script>
   </head>
-  <body>
+  <body onload='c4.init(); c4.route(document.location.hash, document.body);'
+        onhashchange='c4.route(document.location.hash, document.body);'>
 
     <h1>
       #{appName}

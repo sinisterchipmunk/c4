@@ -2,7 +2,37 @@
 
 port = 8192
 path = require 'path'
+fs = require 'fs'
 proxies = []
+
+serve_paths = []
+serve_paths.push path.join process.cwd(), 'src'
+serve_paths.push path.join process.cwd(), 'tmp/src'
+serve_paths.push path.join __dirname, '../dist'
+
+app_filenames =
+  js:  'app.js'
+  css: 'app.css'
+app_sources =
+  js: ''
+  cs: ''
+
+require('c4/cli/watch')
+  fn:
+    js:  app_filenames.js
+    css: app_filenames.css
+  cb:
+    js: (compiled) ->
+      console.log 'application JS has been recompiled'
+      app_sources.js = compiled.code
+      app_sources.js += '\n//# sourceMappingURL=data:application/json;base64,'
+      app_sources.js += new Buffer(compiled.source_map).toString 'base64'
+    css: (compiled) ->
+      console.log 'application CSS has been recompiled'
+      app_sources.css  = compiled.code
+      app_sources.js += '\n/*# sourceMappingURL=data:application/json;base64,'
+      app_sources.js += new Buffer(compiled.source_map).toString 'base64'
+      app_sources.js += '*/'
 
 proxyCollect = (val, arr) ->
   comma = val.indexOf ','
@@ -26,10 +56,6 @@ serveStatic = require 'serve-static'
 Proxy = require 'proxy-middleware'
 URL = require 'url'
 
-serve_paths = []
-serve_paths.push path.join process.cwd(), 'app'
-serve_paths.push path.join __dirname, '../dist'
-
 console.log 'C4 serving files from:'
 console.log ''
 for serve_path in serve_paths
@@ -41,14 +67,16 @@ console.log "  => http://localhost:#{port}"
 console.log ''
 if proxies.length
   console.log "... proxying:"
-for proxy in proxies
-  full_url = path.join "localhost:#{port}", proxy.url
-  console.log "     http://#{full_url} => #{proxy.backend}"
+  for proxy in proxies
+    full_url = path.join "localhost:#{port}", proxy.url
+    console.log "     http://#{full_url} => #{proxy.backend}"
 console.log ''
 
 server = connect()
 for serve_path in serve_paths
   server.use serveStatic serve_path
+server.use '/'+app_filenames.js,  (req, res, next) -> res.end app_sources.js
+server.use '/'+app_filenames.css, (req, res, next) -> res.end app_sources.css
 for proxy in proxies
   url = proxy.url
   url = "/#{url}" unless url.charAt(0) is '/'

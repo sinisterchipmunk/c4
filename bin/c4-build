@@ -44,4 +44,4 @@ embed_modules = (app_dir, _done) ->
                 check err
                 _done()
 
-embed_modules './app', -> console.log 'Embed modules: done'
+embed_modules './src', -> console.log 'Embed modules: done'

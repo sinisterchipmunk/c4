@@ -1,15 +1,24 @@
 #!/usr/bin/env coffee
 
-{directory, template} = require 'c4/generator'
+{directory, file, template} = require 'c4/cli/generator'
 
-require 'commander'
+program = require 'commander'
   .arguments '<app-name>', 'name of application to generate'
   .action (a) ->
-    directory a, ->
-      directory [a, 'tmp', 'build']
-      directory [a, 'app'], ->
-        directory [a, 'app', 'modules']
-        template 'app.html', "#{a}/app/index.html",
-          appName: a
-          done: -> console.log 'done'
+    directory [a, 'tmp', 'build']
+    directory [a, 'config'], ->
+      template 'manifest.coffee', "#{a}/config/manifest.coffee",
+    directory [a, 'src'], ->
+      directory [a, 'src', 'modules']
+      template 'app.html', "#{a}/src/index.html",
+        appName: a
+    directory [a, 'tasks'], ->
+      file 'tasks/test.coffee',  "#{a}/tasks/test.coffee"
+      file 'tasks/build.coffee', "#{a}/tasks/build.coffee"
+      file 'tasks/clean.coffee', "#{a}/tasks/clean.coffee"
+    file 'gulpfile.coffee', "#{a}/gulpfile.coffee"
+    file 'karma.conf.coffee', "#{a}/karma.conf.coffee"
+    file 'test-helper.coffee', "#{a}/test-helper.coffee"
   .parse process.argv
+
+program.help() unless process.argv.slice(2).length

@@ -1,16 +1,17 @@
-FAKE_DATA = [{
-  id: 1,
-  value: Math.random(),
-  created_at: new Date()
-}]
-
 c4.service (bus) ->
-  broker = bus.channel 'c4.broker'
+  broker = c4.broker '#{module_name}'
 
-  # set default value before trying to load data, or else it's `undefined`
-  broker.publish 'put', #{service_name}: '(loading)'
+  ###
+    This is a fake service that publishes a fake message to this module's
+    broker every few milliseconds. You probably want to replace all of this
+    with something more useful.
+  ###
 
-  # mimics some sort of long load time, this might really be ajax or a web
-  # worker or whatever
-  fn = -> broker.publish 'put', #{service_name}: FAKE_DATA
-  setTimeout fn, 3000
+  created_at = new Date()
+  fn = ->
+    broker.put #{service_name}:
+      created_at: created_at
+      updated_at: new Date()
+      value: Math.random()
+
+  setInterval fn, 100

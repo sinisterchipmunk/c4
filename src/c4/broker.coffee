@@ -1,20 +1,59 @@
-bus = require 'postal'
+BROKERS = {}
 
-data = {}
+bus = require 'postal/lib/postal.lodash.js'
 
-bus.channel('postal').subscribe 'subscription.created', (info) ->
-  if info.channel is 'c4.broker'
-    if info.topic isnt 'put' and info.topic isnt 'get'
-      bus.channel('c4.broker').publish info.topic, data[info.topic]
+class Broker
+  constructor: (@name) ->
+    @channel = bus.channel "broker.#{@name}"
+    @subscriptions = []
+    @data = {}
+    @subscriptions.push @channel.subscribe 'put', @put
+    @subscriptions.push bus.channel('postal').subscribe 'subscription.created', (info) =>
+      if info.channel is @channel.channel
+        if info.topic.indexOf('changed') is 0
+          index = info.topic.indexOf '.'
+          if index isnt -1
+            key = info.topic.substring index + 1, info.topic.length
+            @channel.publish info.topic, @data[key]
+          else
+            @channel.publish info.topic, @data
 
-bus.channel('c4.broker').subscribe 'put', (info) ->
-  for prop, value of info
-    data[prop] = value
-    bus.channel('c4.broker').publish prop, value
-  true
+  subscribe: (names..., callback) ->
+    if names.length
+      for name in names
+        @subscriptions.push @channel.subscribe "changed.#{name}", callback
+    else
+      @subscriptions.push @channel.subscribe 'changed', callback
+    true
 
-bus.channel('c4.broker').subscribe 'get', (info) ->
-  props = {}
-  for prop in info.keys
-    props[prop] = data[prop]
-  info.ready props
+  put: (data) =>
+    for key, value of data
+      @data[key] = value
+      @channel.publish "changed.#{key}", value
+    @channel.publish 'changed', @data
+
+  cleanup: ->
+    subscription.unsubscribe() for subscription in @subscriptions
+    true
+
+  clear: ->
+    for key, value of @data
+      @channel.publish "changed.#{key}", undefined
+    @data = {}
+    @channel.publish 'changed', @data
+
+broker = (name, subscriber = null) ->
+  BROKERS[name] or= new Broker name
+  BROKERS[name].subscribe subscriber if subscriber
+  BROKERS[name]
+
+broker._init = ->
+  bus.channel('c4').subscribe 'reset', ->
+    for name, broker of BROKERS
+      broker.cleanup()
+    BROKERS = {}
+  # not supported in postal right now
+  # bus.channel('broker.*').subscribe 'changed.#', (data, envelope) ->
+  #   # yadda yadda new Broker()
+
+module.exports = broker
