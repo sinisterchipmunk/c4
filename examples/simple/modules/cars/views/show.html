@@ -1,0 +1,13 @@
+{#
+  if car {:
+      <div>Year:  <strong>#{ car.year  }</strong></div>
+      <div>Make:  <strong>#{ car.make  }</strong></div>
+      <div>Model: <strong>#{ car.model }</strong></div>
+      <div>
+        <img src="#{ car.image }" width='800' />
+      </div>
+    :}
+  else {:
+      Loading...
+    :}
+#}
