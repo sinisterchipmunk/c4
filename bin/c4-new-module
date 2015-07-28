@@ -30,6 +30,10 @@ program = require 'commander'
           services: services
           views: views
           module_name: module_name
+        template 'module.coffee', path.join(prefix, 'index.coffee'),
+          services: services
+          views: views
+          module_name: module_name
         for view in views
           template 'view.html', path.join(prefix, "#{view}.html"),
             view_name: view

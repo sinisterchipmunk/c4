@@ -17,22 +17,15 @@ app_sources =
   js: ''
   cs: ''
 
-require('c4/cli/watch')
-  fn:
-    js:  app_filenames.js
-    css: app_filenames.css
-  cb:
-    js: (compiled) ->
-      console.log 'application JS has been recompiled'
-      app_sources.js = compiled.code
-      app_sources.js += '\n//# sourceMappingURL=data:application/json;base64,'
-      app_sources.js += new Buffer(compiled.source_map).toString 'base64'
-    css: (compiled) ->
-      console.log 'application CSS has been recompiled'
-      app_sources.css  = compiled.code
-      app_sources.js += '\n/*# sourceMappingURL=data:application/json;base64,'
-      app_sources.js += new Buffer(compiled.source_map).toString 'base64'
-      app_sources.js += '*/'
+require('c4/cli/watch') (bundle) ->
+  for type, result of bundle
+    console.log type, 'recompiled:', result.code.length, 'bytes'
+    app_sources[type] = result.code +
+                        '\n/*# sourceMappingURL=data:application/json;' +
+                        'base64,' +
+                        new Buffer(result.map).toString('base64') +
+                        '*/'
+  true
 
 proxyCollect = (val, arr) ->
   comma = val.indexOf ','

@@ -5,6 +5,5 @@ require 'commander'
   .command 'build',                'build this c4 app'
   .command 'new <generator-name>', 'run a c4 generator'
   .command 'server [port]',        'run the c4 dev server'
-  .command 'watch',                'watch the CSS and JS files for changes'
   .parse process.argv
 

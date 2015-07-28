@@ -8,29 +8,31 @@ class Broker
     @subscriptions = []
     @data = {}
     @subscriptions.push @channel.subscribe 'put', @put
-    @subscriptions.push bus.channel('postal').subscribe 'subscription.created', (info) =>
-      if info.channel is @channel.channel
-        if info.topic.indexOf('changed') is 0
-          index = info.topic.indexOf '.'
-          if index isnt -1
-            key = info.topic.substring index + 1, info.topic.length
-            @channel.publish info.topic, @data[key]
-          else
-            @channel.publish info.topic, @data
 
   subscribe: (names..., callback) ->
     if names.length
-      for name in names
-        @subscriptions.push @channel.subscribe "changed.#{name}", callback
+      subscriptions = for name in names
+        callback @data
+        subscription = @channel.subscribe "changed.#{name}", callback
+        @subscriptions.push subscription
+        subscription
+      return subscriptions
     else
-      @subscriptions.push @channel.subscribe 'changed', callback
-    true
+      callback @data
+      subscription = @channel.subscribe 'changed', callback
+      @subscriptions.push subscription
+    subscription
 
   put: (data) =>
+    topics = ['changed']
     for key, value of data
       @data[key] = value
-      @channel.publish "changed.#{key}", value
-    @channel.publish 'changed', @data
+      topics.push "changed.#{key}"
+    for topic in topics
+      @channel.publish topic, @data
+    true
+
+  get: (key) -> @data[key]
 
   cleanup: ->
     subscription.unsubscribe() for subscription in @subscriptions
@@ -42,10 +44,12 @@ class Broker
     @data = {}
     @channel.publish 'changed', @data
 
-broker = (name, subscriber = null) ->
+broker = (name, fields..., subscriber = null) ->
   BROKERS[name] or= new Broker name
-  BROKERS[name].subscribe subscriber if subscriber
-  BROKERS[name]
+  if subscriber
+    BROKERS[name].subscribe fields..., subscriber
+  else
+    BROKERS[name]
 
 broker._init = ->
   bus.channel('c4').subscribe 'reset', ->

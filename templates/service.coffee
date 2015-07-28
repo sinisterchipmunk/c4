@@ -14,4 +14,4 @@ c4.service (bus) ->
       updated_at: new Date()
       value: Math.random()
 
-  setInterval fn, 100
+  setInterval fn, 10

@@ -8,15 +8,16 @@
   If you need a file to be loaded first, just place a path to it first in
   the array.
 ###
-exports.js = [
-  '!src/**/tests/**/*'
-  'src/**/*.{js,coffee}'
-  'src/modules/**/*.html'
-]
+exports.patterns =
+  js: [
+    '!src/**/specs/**/*'
+    'src/**/*.{js,coffee}'
+    'src/modules/**/*.html'
+  ]
 
-exports.css = [
-  'src/**/*.{css,scss}'
-]
+  css: [
+    'src/**/*.{css,scss}'
+  ]
 
 ###
   Roots are path prefixes included in the above globbing patterns that should

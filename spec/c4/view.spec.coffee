@@ -7,7 +7,8 @@ describe 'c4.view', ->
     window.toffee.templates or= {}
 
     toffee.templates['/test-view'] = render: (context) ->
-      render_context = context
+      render_context = {}
+      render_context[k] = v for k, v of context
       return 'rendered'
 
   afterEach ->
@@ -17,14 +18,18 @@ describe 'c4.view', ->
     c4.view 'test-view2', null
 
   describe 'linking via broker', ->
+    parent = null
+
     beforeEach ->
       c4.view 'test-view',
         path: '/test-view'
         compile: (compiler) ->
           {view, link} = compiler
-          c4.broker 'test-view', (context) ->
+          view.broker 'test-view', (context) ->
             link context
       $view = c4.process '<div data-view="test-view"></div>'
+      parent = document.createElement('div')
+      parent.appendChild $view[0]
 
     it 'should render with the default empty object', ->
       expect(render_context).to.be.ok
@@ -35,6 +40,20 @@ describe 'c4.view', ->
 
     it 'should place the rendered dom into the view element', ->
       expect($view.text()).to.equal 'rendered'
+
+    describe 'then imploding', ->
+      beforeEach -> $view.data('implode')()
+
+      it 'should remove all content from the view', ->
+        expect($view.children()).to.have.length 0
+
+      it 'should not remove the view from its parent', ->
+        # because it might get recycled
+        expect($view.parent()).to.be.defined
+
+      it 'should no longer listen to brokered messages', ->
+        c4.broker('test-view').put one: 2
+        expect(render_context.one).not.to.equal 2
 
     xit 'should be possible to nest views', ->
 

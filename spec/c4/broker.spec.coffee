@@ -7,6 +7,18 @@ describe 'c4.broker', ->
     the helpers are called is absolutely the right thing to do.
   ###
 
+  describe 'when invoked with a second argument', ->
+    sub = null
+    beforeEach -> sub = c4.broker 'name', -> undefined
+    it 'should return a Subscription object', ->
+      expect(sub.unsubscribe).to.be.ok
+
+  describe 'when invoked with no second argument', ->
+    broker = null
+    beforeEach -> broker = c4.broker 'name'
+    it 'should return a Broker object', ->
+      expect(broker.subscribe).to.be.ok
+
   it 'should take an optional subscriber argument for shorthand', ->
     called = 0
     sub1 = -> called++

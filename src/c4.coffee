@@ -36,6 +36,7 @@ c4 = (callback) ->
 c4.service = require './c4/service'
 c4.broker = require './c4/broker'
 c4.view = require './c4/view'
+c4.route = require './c4/route'
 
 # When `c4` is to be initialized, begin yielding the bus to each listener.
 # Then publish a `loaded` message, which might be consumed by other
@@ -43,6 +44,8 @@ c4.view = require './c4/view'
 # register themselves.
 # bus.channel('c4').subscribe 'init', ->
 c4.init = ->
+  # populate params from current hash
+  c4.route.params document.location.hash
   for listener in bus_listeners
     listener bus
   bus_listeners.splice 0, bus_listeners.length
@@ -59,9 +62,10 @@ c4.reset = ->
     that certain subscriptions should survive nuking, but for now I'll take
     the easy way out and just explicitly re-subscribe each component.
   ###
-  c4.service._init()
-  c4.broker._init()
-  c4.view._init()
+  c4.service._init c4
+  c4.broker._init c4
+  c4.view._init c4
+  c4.route._init c4
 
 c4.reset()
 
