@@ -1,0 +1,59 @@
+<html>
+  <head>
+    <title>
+      weather
+    </title>
+    <script src='/vendor/jquery.min.js'></script>
+    <script src='/vendor/d3.js'></script>
+    <script src='/vendor/nv.d3.js'></script>
+    <script src='c4.js'></script>
+    <script src='app.js'></script>
+    <link href='/vendor/nv.d3.css' rel='stylesheet' type='text/css'></link>
+    <link href="/vendor/bootstrap.css" rel="stylesheet" type="text/css"></link>
+    <link href="/vendor/bootstrap-theme.css" rel="stylesheet" type="text/css"></link>
+    <link href="/app.css" rel="stylesheet" type="text/css"></link>
+  </head>
+  <body onload='c4.init(); c4.route(document.location.hash, document.body);'
+        onhashchange='c4.route(document.location.hash, document.body);'>
+
+    <div class='container-fluid'>
+      <div class='row'>
+        <div class='pull-right'>
+          <div data-view='selector'
+               data-collection='cities'
+               data-model-name='city'></div>
+        </div>
+        <div class='pull-right'>
+          <div data-view='selector'
+               data-collection='ranges'
+               data-model-name='range'></div>
+        </div>
+      </div>
+
+      <div class='row'>
+        <div class='card col-xs-12 col-sm-6 col-md-3'>
+          <div data-view='weather-chart'
+               data-topic='temperatures'
+               data-key='Temperature (F)'
+               data-title='Temperature'
+               data-y-suffix='°'></div>
+        </div>
+
+        <div class='card col-xs-12 col-sm-6 col-md-3'>
+          <div data-view='weather-chart'
+               data-topic='pressures'
+               data-key='Pressure'
+               data-title='Pressure'></div>
+        </div>
+
+        <div class='card col-xs-12 col-sm-6 col-md-3'>
+          <div data-view='weather-chart'
+               data-topic='humidities'
+               data-key='Humidity'
+               data-title='Humidity'></div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
